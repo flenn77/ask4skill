@@ -1,0 +1,172 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: ask4skill-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ask4skill
+      MYSQL_USER: askuser
+      MYSQL_PASSWORD: askpassword
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - asknet
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: ask4skill-phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: askuser
+      PMA_PASSWORD: askpassword
+    ports:
+      - "8687:80"
+    depends_on:
+      - mysql
+    volumes:
+      - ./docker/phpmyadmin/apache.conf:/etc/apache2/conf-available/servername.conf
+    command: >
+      bash -c "a2enconf servername && apache2-foreground"
+    networks:
+      - asknet
+
+  # adminer:
+  #   image: adminer
+  #   container_name: ask4skill-adminer
+  #   restart: always
+  #   ports:
+  #     - "8087:8080"
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - asknet
+
+  maildev:
+    image: maildev/maildev
+    container_name: ask4skill-maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - asknet
+
+  frontend:
+    build: ../frontend
+    container_name: ask4skill-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+    networks:
+      - asknet
+
+  auth-service:
+    build: ../backend/auth-service
+    container_name: ask4skill-auth-service
+    ports:
+      - "5001:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  user-service:
+    build: ../backend/user-service
+    container_name: ask4skill-user-service
+    ports:
+      - "5002:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  coach-service:
+    build: ../backend/coach-service
+    container_name: ask4skill-coach-service
+    ports:
+      - "5003:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  booking-service:
+    build: ../backend/booking-service
+    container_name: ask4skill-booking-service
+    ports:
+      - "5004:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  chat-service:
+    build: ../backend/chat-service
+    container_name: ask4skill-chat-service
+    ports:
+      - "5005:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  payment-service:
+    build: ../backend/payment-service
+    container_name: ask4skill-payment-service
+    ports:
+      - "5006:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  admin-service:
+    build: ../backend/admin-service
+    container_name: ask4skill-admin-service
+    ports:
+      - "5007:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+    depends_on:
+      - mysql
+    networks:
+      - asknet
+
+  notification-service:
+    build: ../backend/notification-service
+    container_name: ask4skill-notification-service
+    ports:
+      - "5008:5000"
+    environment:
+      DATABASE_URL: mysql://askuser:askpassword@mysql:3306/ask4skill
+      MAILDEV_HOST: maildev
+      MAILDEV_PORT: 1025
+    depends_on:
+      - mysql
+      - maildev
+    networks:
+      - asknet
+
+networks:
+  asknet:
+
+volumes:
+  mysql_data:
