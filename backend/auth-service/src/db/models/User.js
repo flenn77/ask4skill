@@ -87,6 +87,12 @@ module.exports = (sequelize, DataTypes) => {
     ip_derniere_connexion: {
       type: DataTypes.STRING(45),
       allowNull: true
+    },
+    // --- Nouveau champ pour la révocation des JWT ---
+    token_invalid_before: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     tableName: 'users',
