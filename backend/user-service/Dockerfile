@@ -2,21 +2,21 @@ FROM node:20
 
 WORKDIR /app
 
-# Installer curl pour le healthcheck
+# 1) installer curl pour le healthcheck
 RUN apt-get update && apt-get install -y curl
 
-# Installer nodemon et les dépendances
+# 2) dépendances
 COPY package*.json ./
 RUN npm install -g nodemon && npm install
 
-# Copier le code
+# 3) code
 COPY . .
 
 EXPOSE 5000
 
-# Healthcheck : teste l’endpoint racine
+# 4) healthcheck : teste la racine HTTP
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
   CMD curl -f http://localhost:5000/ || exit 1
 
-# Démarrage en dev (hot-reload)
+# 5) démarrage en dev (nodemon)
 CMD ["npm", "run", "dev"]
