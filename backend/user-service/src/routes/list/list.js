@@ -1,32 +1,27 @@
 'use strict';
 
-const express = require('express');
-const { Op }  = require('sequelize');
-const { User }          = require('../../db/models');
+const express       = require('express');
+const { Op }        = require('sequelize');
+const { User }      = require('../../db/models');
+const { ensureAuth }  = require('../../middleware/auth');
+const { ensureAdmin } = require('../../middleware/roles');
 
 const router = express.Router();
 
-/**
- * GET /users
- * Liste paginée des utilisateurs
- */
-router.get('/', async (req, res) => {
+router.get('/', ensureAuth, ensureAdmin, async (req, res) => {
   try {
-    // Pagination
-    const page  = parseInt(req.query.page,  10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const page   = parseInt(req.query.page,  10) || 1;
+    const limit  = parseInt(req.query.limit, 10) || 20;
     const search = req.query.search;
 
-    // Filtre optionnel sur le pseudo
     const where = {};
     if (search) {
       where.pseudo = { [Op.like]: `%${search}%` };
     }
 
-    // Ne renvoie pas le password
+    // On n'expose pas le password
     const attributes = { exclude: ['password'] };
 
-    // Récupère le total et la page de données
     const { count, rows } = await User.findAndCountAll({
       where,
       attributes,
@@ -47,3 +42,4 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
+
