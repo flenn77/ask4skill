@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     role: {
-      type: DataTypes.ENUM('JOUEUR','COACH','ADMIN','SUPERADMIN','MODERATEUR'),
+      type: DataTypes.ENUM('JOUEUR', 'COACH', 'ADMIN', 'SUPERADMIN', 'MODERATEUR'),
       allowNull: false,
       defaultValue: 'JOUEUR'
     },
@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     sexe: {
-      type: DataTypes.ENUM('H','F','Autre','Non spécifié'),
+      type: DataTypes.ENUM('H', 'F', 'Autre', 'Non spécifié'),
       allowNull: true
     },
     date_naissance: {
@@ -90,7 +90,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     type_connexion: {
-      type: DataTypes.ENUM('email','google','steam','discord'),
+      type: DataTypes.ENUM('email', 'google', 'steam', 'discord'),
       allowNull: false,
       defaultValue: 'email'
     },
@@ -115,7 +115,17 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true,
       defaultValue: null
-    }
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
+    last_login: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+
   }, {
     tableName: 'users',
     timestamps: false
