@@ -1,7 +1,8 @@
 'use strict';
 
-const express   = require('express');
-const meRoute   = require('./me/me');
+const express = require('express');
+const meRoute = require('./me/me');
+const pwdRoute = require('./me/password');
 const userRoute = require('./user/user');
 const listRoute = require('./list/list');
 
@@ -9,6 +10,8 @@ const router = express.Router();
 
 // 1) /users/me
 router.use('/me', meRoute);
+// 1b) /users/me/password
+router.use('/me/password', pwdRoute);
 
 // 2) /users/:id
 router.use('/:id', userRoute);
