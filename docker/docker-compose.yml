@@ -2,217 +2,241 @@ version: "3.8"
 
 services:
 
+  # 1) Base de données + outils
   mysql:
-    image: mysql:8
+    image: mysql:8.0
     container_name: ask4skill-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE:      ${DB_NAME}
+      MYSQL_USER:          ${DB_USER}
+      MYSQL_PASSWORD:      ${DB_PASSWORD}
+      MYSQL_ROOT_HOST:     '%'
+    ports:
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    networks:
-      - asknet
+    healthcheck:
+      test: ["CMD","mysqladmin","ping","-h","localhost","-P","${DB_PORT}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     container_name: ask4skill-phpmyadmin
     restart: always
     environment:
-      PMA_HOST: ${PMA_HOST}
-      PMA_USER: ${PMA_USER}
+      PMA_HOST:     ${PMA_HOST}
+      PMA_USER:     ${PMA_USER}
       PMA_PASSWORD: ${PMA_PASSWORD}
-      PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI}
+    ports:
+      - "8080:80"
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.localhost`)"
-      - "traefik.http.routers.phpmyadmin.entrypoints=web"
-      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
 
   maildev:
-    image: maildev/maildev
+    image: maildev/maildev:latest
     container_name: ask4skill-maildev
+    restart: always
     ports:
-      - "${MAILDEV_UI_PORT}:1080"
-      - "${MAILDEV_PORT}:1025"
-    networks:
-      - asknet
+      - "1080:1080"
+      - "1025:1025"
 
-  frontend:
-    build: ../frontend
-    container_name: ask4skill-frontend
-    depends_on:
-      - auth-service
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-
+  # 2) Auth Service (avec migrations)
   auth-service:
-    build: ../backend/auth-service
+    build:
+      context: ../backend/auth-service
+      dockerfile: Dockerfile
     container_name: ask4skill-auth-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../backend/auth-service:/app
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
-      - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.auth.entrypoints=web"
-      - "traefik.http.services.auth.loadbalancer.server.port=5000"
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx sequelize-cli db:migrate &&
+        npm run dev
+      "
 
+  # 3) Autres services (sans migrations)
   user-service:
-    build: ../backend/user-service
+    build:
+      context: ../backend/user-service
+      dockerfile: Dockerfile
     container_name: ask4skill-user-service
+    ports:
+      - "5001:5000"
+    volumes:
+      - ../backend/user-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.user.rule=PathPrefix(`/api/user`)"
-      - "traefik.http.routers.user.entrypoints=web"
-      - "traefik.http.services.user.loadbalancer.server.port=5000"
+    command: npm run dev
 
   coach-service:
-    build: ../backend/coach-service
+    build:
+      context: ../backend/coach-service
+      dockerfile: Dockerfile
     container_name: ask4skill-coach-service
+    ports:
+      - "5002:5000"
+    volumes:
+      - ../backend/coach-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.coach.rule=PathPrefix(`/api/coach`)"
-      - "traefik.http.routers.coach.entrypoints=web"
-      - "traefik.http.services.coach.loadbalancer.server.port=5000"
+    command: npm run dev
 
   booking-service:
-    build: ../backend/booking-service
+    build:
+      context: ../backend/booking-service
+      dockerfile: Dockerfile
     container_name: ask4skill-booking-service
+    ports:
+      - "5003:5000"
+    volumes:
+      - ../backend/booking-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.booking.rule=PathPrefix(`/api/booking`)"
-      - "traefik.http.routers.booking.entrypoints=web"
-      - "traefik.http.services.booking.loadbalancer.server.port=5000"
+    command: npm run dev
 
   chat-service:
-    build: ../backend/chat-service
+    build:
+      context: ../backend/chat-service
+      dockerfile: Dockerfile
     container_name: ask4skill-chat-service
+    ports:
+      - "5004:5000"
+    volumes:
+      - ../backend/chat-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.chat.rule=PathPrefix(`/api/chat`)"
-      - "traefik.http.routers.chat.entrypoints=web"
-      - "traefik.http.services.chat.loadbalancer.server.port=5000"
+    command: npm run dev
 
   payment-service:
-    build: ../backend/payment-service
+    build:
+      context: ../backend/payment-service
+      dockerfile: Dockerfile
     container_name: ask4skill-payment-service
+    ports:
+      - "5005:5000"
+    volumes:
+      - ../backend/payment-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.payment.rule=PathPrefix(`/api/payment`)"
-      - "traefik.http.routers.payment.entrypoints=web"
-      - "traefik.http.services.payment.loadbalancer.server.port=5000"
+    command: npm run dev
 
   admin-service:
-    build: ../backend/admin-service
+    build:
+      context: ../backend/admin-service
+      dockerfile: Dockerfile
     container_name: ask4skill-admin-service
+    ports:
+      - "5006:5000"
+    volumes:
+      - ../backend/admin-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
       - mysql
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`)"
-      - "traefik.http.routers.admin.entrypoints=web"
-      - "traefik.http.services.admin.loadbalancer.server.port=5000"
+    command: npm run dev
 
   notification-service:
-    build: ../backend/notification-service
+    build:
+      context: ../backend/notification-service
+      dockerfile: Dockerfile
     container_name: ask4skill-notification-service
+    ports:
+      - "5007:5000"
+    volumes:
+      - ../backend/notification-service:/app
+      - /app/node_modules
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      MAILDEV_HOST: maildev
+      DB_HOST:      ${DB_HOST}
+      DB_PORT:      ${DB_PORT}
+      DB_NAME:      ${DB_NAME}
+      DB_USER:      ${DB_USER}
+      DB_PASSWORD:  ${DB_PASSWORD}
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      MAILDEV_HOST: ${MAILDEV_HOST}
       MAILDEV_PORT: ${MAILDEV_PORT}
     depends_on:
       - mysql
       - maildev
-    networks:
-      - asknet
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.notification.rule=PathPrefix(`/api/notification`)"
-      - "traefik.http.routers.notification.entrypoints=web"
-      - "traefik.http.services.notification.loadbalancer.server.port=5000"
-
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: ask4skill-portainer
-    restart: always
-    ports:
-      - "9000:9000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-    networks:
-      - asknet
-
-  traefik:
-    image: traefik:v2.11
-    container_name: ask4skill-traefik
-    command:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8081:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - asknet
-
-networks:
-  asknet:
+    command: npm run dev
 
 volumes:
   mysql_data:
-  portainer_data:
-  

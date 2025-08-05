@@ -1,19 +1,22 @@
 FROM node:20
 
-# Crée le dossier de travail
 WORKDIR /app
 
-# Copie les fichiers de dépendances (plus rapide pour le cache Docker)
-COPY package*.json ./
+# 1) installer curl pour le healthcheck
+RUN apt-get update && apt-get install -y curl
 
-# Installe nodemon globalement et les dépendances locales
+# 2) dépendances
+COPY package*.json ./
 RUN npm install -g nodemon && npm install
 
-# Copie le reste des fichiers du projet
+# 3) code
 COPY . .
 
-# Port exposé
 EXPOSE 5000
 
-# Lancement du service
+# 4) healthcheck : teste la racine HTTP
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
+  CMD curl -f http://localhost:5000/ || exit 1
+
+# 5) démarrage en dev (nodemon)
 CMD ["npm", "run", "dev"]
