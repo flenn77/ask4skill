@@ -33,6 +33,24 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(50),
       allowNull: true
     },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    location: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    preferences: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: {}
+    },
+    notifications: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: { email: true, push: false }
+    },
     avatar_url: {
       type: DataTypes.STRING(255),
       allowNull: true
@@ -88,7 +106,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(45),
       allowNull: true
     },
-    // --- Nouveau champ pour la révocation des JWT ---
     token_invalid_before: {
       type: DataTypes.DATE,
       allowNull: true,

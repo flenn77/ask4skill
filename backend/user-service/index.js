@@ -21,10 +21,11 @@ app.get('/', (req, res) => res.send('Service user-service OK'));
 // Routes « métier »
 app.use('/users', usersRouter);
 
-db.Profile.sync({ alter: true })
-  .then(() => console.log('Table profiles synchronisée'))
-  .catch(err => console.error('Échec sync profiles :', err));
+// Synchronisation de **tous** les modèles (y compris User avec tes nouveaux champs)
+db.sequelize.sync({ alter: true })
+  .then(() => console.log('✅ Tables synchronisées'))
+  .catch(err => console.error('❌ Échec sync :', err));
 
 app.listen(port, () => {
-  console.log(`user-service lancé sur le port ${port}`);
+  console.log(`🚀 user-service lancé sur le port ${port}`);
 });

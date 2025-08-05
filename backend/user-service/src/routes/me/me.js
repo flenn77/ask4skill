@@ -1,25 +1,26 @@
-// src/routes/me/me.js
 'use strict';
 
-const express       = require('express');
-const { ensureAuth }= require('../../middleware/auth');
-const { User, Profile } = require('../../db/models');
-const router        = express.Router();
+const express        = require('express');
+const { ensureAuth } = require('../../middleware/auth');
+const { User }          = require('../../db/models');
+
+const router = express.Router();
 
 /**
  * GET /users/me
- * Récupère le profil de l’utilisateur connecté
  */
 router.get('/', ensureAuth, async (req, res) => {
-  const id = req.user.sub;  // req.user défini par ensureAuth
+  const id = req.user.sub;
   try {
-    const user = await User.findByPk(id, { include: Profile });
+   const user = await User.findByPk(id, {
+     attributes: { exclude: ['password'] }
+   });
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
     }
     res.json({
       message: 'Profil récupéré avec succès',
-      data: user
+      data:    user
     });
   } catch (err) {
     console.error('getMe error:', err);

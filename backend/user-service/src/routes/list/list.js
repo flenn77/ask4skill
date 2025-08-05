@@ -1,9 +1,8 @@
-// src/routes/list/list.js
 'use strict';
 
 const express = require('express');
-const { Op } = require('sequelize');
-const { User, Profile } = require('../../db/models');
+const { Op }  = require('sequelize');
+const { User }          = require('../../db/models');
 
 const router = express.Router();
 
@@ -14,7 +13,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     // Pagination
-    const page  = parseInt(req.query.page, 10)  || 1;
+    const page  = parseInt(req.query.page,  10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const search = req.query.search;
 
@@ -24,15 +23,17 @@ router.get('/', async (req, res) => {
       where.pseudo = { [Op.like]: `%${search}%` };
     }
 
+    // Ne renvoie pas le password
+    const attributes = { exclude: ['password'] };
+
     // Récupère le total et la page de données
     const { count, rows } = await User.findAndCountAll({
       where,
-      include: Profile,
+      attributes,
       offset: (page - 1) * limit,
       limit
     });
 
-    // Renvoie le résultat
     res.json({
       total:  count,
       page,
