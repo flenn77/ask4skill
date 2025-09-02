@@ -1,4 +1,3 @@
-// src/routes/user/profile.js
 'use strict';
 
 const express       = require('express');
@@ -61,7 +60,6 @@ router.patch('/', ensureAuth, async (req, res) => {
       return res.status(400).json({ error: 'Aucun champ valide à mettre à jour' });
     }
     await user.update(updates);
-    // On renvoie uniquement les champs « profil »
     const { avatar_url, bio, location, preferences, notifications } = user;
     res.json({ avatar_url, bio, location, preferences, notifications });
   } catch (err) {

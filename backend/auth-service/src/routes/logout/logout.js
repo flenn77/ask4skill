@@ -27,7 +27,6 @@ const router = express.Router();
  *         description: Token manquant/invalide
  */
 router.post('/', ensureAuth, async (req, res) => {
-  // on enregistre "maintenant" comme invalidateur de tous les tokens plus anciens
   await User.update(
     { token_invalid_before: new Date() },
     { where: { id: req.user.sub } }

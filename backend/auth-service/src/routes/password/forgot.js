@@ -5,7 +5,6 @@ const nodemailer  = require('nodemailer');
 
 const router = express.Router();
 
-// Transporteur MailDev
 const transporter = nodemailer.createTransport({
   host: process.env.MAILDEV_HOST || 'maildev',
   port: process.env.MAILDEV_PORT || 1025,
@@ -44,12 +43,10 @@ router.post('/', async (req, res) => {
 
   const user = await User.findOne({ where: { email } });
   if (user) {
-    // Générer token et entrée en base
     const token   = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60*60*1000); // 1h
     await PasswordReset.create({ user_id: user.id, token, expires_at: expires });
 
-    // Envoyer le mail
     const resetUrl = `${process.env.APP_URL||'http://localhost:5000'}/auth/reset?token=${token}`;
     await transporter.sendMail({
       from: '"Ask4Skill" <no-reply@ask4skill.local>',
@@ -64,7 +61,6 @@ router.post('/', async (req, res) => {
     });
   }
 
-  // Toujours renvoyer 200 pour ne pas divulguer l’existence de l’email
   res.json({ message: 'Si cet email existe, un lien de réinitialisation vous a été envoyé.' });
 });
 

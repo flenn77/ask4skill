@@ -1,4 +1,3 @@
-// src/routes/me/deactivate.js
 'use strict';
 
 const express       = require('express');
@@ -10,7 +9,6 @@ const { User }      = require('../../db/models');
 
 const router = express.Router();
 
-// Transporteur SMTP
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
@@ -43,7 +41,6 @@ router.delete(
 
     await user.update({ is_active: false });
 
-    // Envoi du mail de confirmation
     await transporter.sendMail({
       from:    '"Ask4Skill" <no-reply@ask4skill.local>',
       to:      user.email,

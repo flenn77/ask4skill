@@ -142,7 +142,10 @@ services:
       DB_PASSWORD:  ${DB_PASSWORD}
       DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      coach-service:
+        condition: service_started
     command: npm run dev
 
   chat-service:

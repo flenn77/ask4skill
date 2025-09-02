@@ -16,7 +16,6 @@ router.patch(
   '/',
   ensureAuth,
 
-  // Validation des champs
   body('oldPassword')
     .notEmpty().withMessage('Mot de passe actuel requis'),
   body('newPassword')
@@ -36,19 +35,16 @@ router.patch(
     const userId = req.user.sub;
 
     try {
-      // 2) Charger l’utilisateur
       const user = await User.findByPk(userId);
       if (!user) {
         return res.status(404).json({ error: 'Utilisateur non trouvé' });
       }
 
-      // 3) Vérifier l’ancien mot de passe
       const ok = await bcrypt.compare(oldPassword, user.password);
       if (!ok) {
         return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
       }
 
-      // 4) Hasher et enregistrer le nouveau mot de passe
       const hash = await bcrypt.hash(newPassword, 10);
       await user.update({ password: hash });
 

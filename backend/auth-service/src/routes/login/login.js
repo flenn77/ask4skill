@@ -1,4 +1,3 @@
-// src/routes/login/login.js
 const express   = require('express');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
@@ -61,7 +60,6 @@ router.post('/', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1) Champs requis
     if (!email || !password) {
       return res.status(400).json({ error: 'Email et mot de passe sont requis' });
     }
@@ -69,24 +67,20 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Format d’email invalide' });
     }
 
-    // 2) Recherche utilisateur
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe invalide' });
     }
 
-    // 3) Vérification du mot de passe
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return res.status(401).json({ error: 'Email ou mot de passe invalide' });
     }
 
-    // 4) Vérification email confirmé
     if (!user.is_email_verified) {
       return res.status(403).json({ error: 'Veuillez confirmer votre adresse e-mail' });
     }
 
-    // 5) Génération du JWT
     const token = jwt.sign(
       { sub: user.id, role: user.role },
       process.env.JWT_SECRET,

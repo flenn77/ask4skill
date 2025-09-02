@@ -19,7 +19,6 @@ router.get('/', ensureAuth, ensureAdmin, async (req, res) => {
       where.pseudo = { [Op.like]: `%${search}%` };
     }
 
-    // On n'expose pas le password
     const attributes = { exclude: ['password'] };
 
     const { count, rows } = await User.findAndCountAll({

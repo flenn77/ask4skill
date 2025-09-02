@@ -30,7 +30,6 @@ router.get(
 router.patch(
   '/',
   ensureAuth,
-  // on enlève body('email') pour interdiction de mise à jour de l’email
   body('pseudo')
     .optional()
     .isLength({ min: 3, max: 30 })
@@ -71,7 +70,6 @@ router.patch(
       if (!user) {
         return res.status(404).json({ error: 'Utilisateur non trouvé' });
       }
-      // champs autorisés à la mise à jour (sans email)
       const updatable = [
         'pseudo',
         'prenom',

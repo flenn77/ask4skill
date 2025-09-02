@@ -64,7 +64,6 @@ router.patch(
   '/',
   ensureAuth,
   ensureAdmin,
-  // validateurs
   body('email').optional().isEmail().withMessage('Email invalide'),
   body('pseudo').optional().isLength({ min: 3, max: 30 }).withMessage('Pseudo 3–30 caractères'),
   body('prenom').optional().isLength({ max: 50 }).withMessage('Prénom trop long'),
@@ -101,7 +100,6 @@ router.patch(
   }
 );
 
-// Routes profil (mise à jour / récupération du « profile » du user)
 router.use('/profile', profileRoute);
 
 module.exports = router;
