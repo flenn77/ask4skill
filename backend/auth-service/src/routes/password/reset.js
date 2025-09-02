@@ -34,13 +34,11 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'Token et nouveau mot de passe requis' });
   }
 
-  // Vérifier le token
   const entry = await PasswordReset.findOne({ where: { token } });
   if (!entry || new Date() > entry.expires_at) {
     return res.status(400).json({ error: 'Token invalide ou expiré' });
   }
 
-  // Vérifier règles mot de passe (mêmes que pour register)
   if (newPassword.length < 8 ||
       !/[A-Z]/.test(newPassword) ||
       !/[a-z]/.test(newPassword) ||
@@ -51,12 +49,10 @@ router.post('/', async (req, res) => {
     });
   }
 
-  // Mettre à jour l’utilisateur
   const user = await User.findByPk(entry.user_id);
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
 
-  // Invalider tous les anciens tokens de reset + purge l’entrée
   await PasswordReset.destroy({ where: { user_id: user.id } });
 
   res.json({ message: 'Mot de passe réinitialisé avec succès' });

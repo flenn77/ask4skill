@@ -1,4 +1,3 @@
-// src/routes/register/register.js
 const express      = require('express');
 const bcrypt       = require('bcrypt');
 const crypto       = require('crypto');
@@ -8,7 +7,6 @@ const { User, EmailConfirmation } = require('../../db/models');
 
 const router = express.Router();
 
-// Transporteur MailDev
 const transporter = nodemailer.createTransport({
   host: process.env.MAILDEV_HOST || 'maildev',
   port: process.env.MAILDEV_PORT || 1025,
@@ -145,7 +143,6 @@ router.post('/', async (req, res) => {
       date_naissance, telephone
     } = req.body;
 
-    // 1) Tous les champs requis
     if (!email || !password || !pseudo || !prenom || !nom) {
       return res.status(400).json({ error: 'Tous les champs (email, password, pseudo, prenom, nom) sont requis' });
     }
@@ -153,7 +150,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Email invalide' });
     }
 
-    // 2) Unicité email & pseudo
     if (await User.findOne({ where: { email } })) {
       return res.status(400).json({ error: 'Email déjà utilisé' });
     }
@@ -164,7 +160,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Pseudo déjà utilisé' });
     }
 
-    // 3) Règles mot de passe
     const pwdRules = {
       minLength: 8,
       uppercase: /[A-Z]/,
@@ -184,7 +179,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // 4) Validation optionnelle
     if (avatar_url && !validator.isURL(avatar_url)) {
       return res.status(400).json({ error: 'URL d’avatar invalide' });
     }
@@ -203,7 +197,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // 5) Hash & création utilisateur
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
       email, password: hash,
@@ -212,7 +205,6 @@ router.post('/', async (req, res) => {
       date_naissance, telephone
     });
 
-    // 6) Génération du token de confirmation (24h)
     const token   = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await EmailConfirmation.create({
@@ -221,7 +213,6 @@ router.post('/', async (req, res) => {
       expires_at: expires
     });
 
-    // 7) Envoi du mail de confirmation
     const confirmUrl = `${process.env.APP_URL || 'http://localhost:5000'}/auth/confirm?token=${token}`;
     await transporter.sendMail({
       from:    '"Ask4Skill" <no-reply@ask4skill.local>',
@@ -235,7 +226,6 @@ router.post('/', async (req, res) => {
       `
     });
 
-    // 8) Nettoyage et réponse
     const result = user.toJSON();
     delete result.password;
     res.status(201).json(result);

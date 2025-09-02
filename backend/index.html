@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Ask4Skill – Front MVP Complet</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin:18px; background:#0b0c10; color:#eaf0f1; }
+    h1 { margin:0 0 10px; }
+    h2 { margin:20px 0 8px; }
+    fieldset { border:1px solid #2b2f36; border-radius:10px; padding:12px; margin:14px 0; }
+    legend { padding:0 6px; color:#9ee37d; font-weight:600; }
+    label { display:block; margin:8px 0 4px; font-size:14px; color:#bfc9ca; }
+    input, select, button, textarea {
+      background:#111418; color:#eaf0f1; border:1px solid #2b2f36; border-radius:8px;
+      padding:8px; font-size:14px; outline:none;
+    }
+    textarea { min-height:72px; }
+    input:focus, select:focus, textarea:focus { border-color:#9ee37d; }
+    button { cursor:pointer; padding:8px 10px; border-radius:8px; border:1px solid #2b2f36; }
+    button.primary { border-color:#9ee37d; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    .col { flex:1 1 240px; min-width:240px; }
+    .list { display:grid; gap:10px; }
+    .card { border:1px solid #2b2f36; border-radius:10px; padding:12px; background:#0f1115; }
+    .muted { color:#9aa3a9; font-size:12px; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #2b2f36; border-radius:999px; font-size:12px; margin-left:6px;}
+    .ok { color:#9ee37d; }
+    .warn { color:#ffd166; }
+    .err { color:#ff6b6b; }
+    .grid { display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    hr { border:none; border-top:1px solid #2b2f36; margin:12px 0; }
+    .small { font-size:12px; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    code { background:#0f1115; border:1px solid #2b2f36; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>Ask4Skill – Front MVP Complet</h1>
+  <div class="muted small">Tout-en-un : coach-service + booking-service + auth-service (test). Mode test Stripe (pm_card_visa).</div>
+
+  <!-- 1) BASES -->
+  <fieldset>
+    <legend>1) Bases (URLs des services)</legend>
+    <div class="row">
+      <label class="col">AUTH_BASE
+        <input id="authBase" value="http://localhost:5000" />
+      </label>
+      <label class="col">COACH_BASE
+        <input id="coachBase" value="http://localhost:5002" />
+      </label>
+      <label class="col">BOOK_BASE
+        <input id="bookBase" value="http://localhost:5003" />
+      </label>
+    </div>
+    <div class="muted small">Laisse par défaut si tu utilises le docker-compose fourni.</div>
+  </fieldset>
+
+  <!-- 2) LOGIN + TOKENS -->
+  <fieldset>
+    <legend>2) Connexion / Tokens</legend>
+    <div class="row">
+      <div class="col">
+        <label>Email Player</label>
+        <input id="playerEmail" value="player@test.com" />
+      </div>
+      <div class="col">
+        <label>Mot de passe</label>
+        <input id="playerPass" type="password" value="Secur3$Pass!" />
+      </div>
+      <div>
+        <button class="primary" onclick="login('player')">Login Player</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label>Email Coach</label>
+        <input id="coachEmail" value="coach@test.com" />
+      </div>
+      <div class="col">
+        <label>Mot de passe</label>
+        <input id="coachPass" type="password" value="Secur3$Pass!" />
+      </div>
+      <div>
+        <button class="primary" onclick="login('coach')">Login Coach</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label>Admin token (colle ton JWT admin)</label>
+        <input id="adminToken" placeholder="eyJhbGciOi..." />
+      </div>
+      <div>
+        <button onclick="saveAdmin()">Set Admin Token</button>
+      </div>
+    </div>
+
+    <div id="whoami" class="muted small"></div>
+  </fieldset>
+
+  <!-- 3) COACH PROFILE (PRIVÉ) -->
+  <fieldset>
+    <legend>3) Coach Profile (privé)</legend>
+    <div class="row">
+      <button onclick="coachProfileLoad()">Charger mon profil</button>
+      <div class="muted small">Besoin d’être connecté en coach.</div>
+    </div>
+    <div class="row">
+      <label class="col">coach_profile_id
+        <input id="coachProfileId" readonly />
+      </label>
+      <label class="col">structure
+        <input id="pfStructure" placeholder="Team XYZ" />
+      </label>
+      <label class="col">langues (CSV)
+        <input id="pfLangues" placeholder="fr,en" />
+      </label>
+      <label class="col">jeux (CSV)
+        <input id="pfJeux" placeholder="VALORANT" />
+      </label>
+    </div>
+    <label>bio_coach</label>
+    <textarea id="pfBio" placeholder="Ancien IGL Valorant, 3 ans d'expérience."></textarea>
+    <div class="row">
+      <label class="col">reseaux (JSON)
+        <input id="pfReseaux" placeholder='{"twitch":"https://twitch.tv/coachx"}' />
+      </label>
+      <label class="col">palmares (JSON)
+        <input id="pfPalmares" placeholder='["Top 3 VLR FR 2023"]' />
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="coachProfileSave()">Créer / Mettre à jour</button>
+    </div>
+    <div id="coachProfileOut" class="muted small"></div>
+  </fieldset>
+
+  <!-- 4) OFFERS (PRIVÉ) -->
+  <fieldset>
+    <legend>4) Offers (privé)</legend>
+    <div class="row">
+      <button onclick="offersLoad()">Lister mes offres</button>
+    </div>
+    <div class="grid" id="offersList"></div>
+    <hr/>
+    <h3>Ajouter / Modifier une offre</h3>
+    <div class="row">
+      <label class="col">ID (laisser vide pour créer)
+        <input id="offerId" />
+      </label>
+      <label class="col">type
+        <select id="offerType">
+          <option>INDIVIDUEL</option>
+          <option>GROUPE</option>
+          <option>REPLAY</option>
+          <option>LIVE</option>
+        </select>
+      </label>
+      <label class="col">titre
+        <input id="offerTitre" placeholder="VOD review 1h" />
+      </label>
+      <label class="col">duree_min
+        <input id="offerDuree" type="number" value="60" />
+      </label>
+    </div>
+    <label>description</label>
+    <textarea id="offerDesc" placeholder="Analyse de replay + plan d'entrainement"></textarea>
+    <div class="row">
+      <label class="col">prix_centimes
+        <input id="offerPrix" type="number" value="2500" />
+      </label>
+      <label class="col">devise
+        <input id="offerDevise" value="EUR" />
+      </label>
+      <label class="col">actif
+        <select id="offerActif"><option>true</option><option>false</option></select>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="offerSave()">Save</button>
+      <button onclick="offerReset()">Reset formulaire</button>
+    </div>
+    <div id="offerOut" class="muted small"></div>
+  </fieldset>
+
+  <!-- 5) AVAILABILITIES (PRIVÉ) -->
+  <fieldset>
+    <legend>5) Availabilities (privé)</legend>
+    <div class="row">
+      <label class="col">from (YYYY-MM-DD)
+        <input id="availFrom" placeholder="2025-09-01" />
+      </label>
+      <label class="col">to (YYYY-MM-DD)
+        <input id="availTo" placeholder="2025-09-30" />
+      </label>
+      <button onclick="availLoad()">Lister mes créneaux</button>
+    </div>
+    <div class="grid" id="availList"></div>
+    <hr/>
+    <h3>Ajouter un créneau</h3>
+    <div class="row">
+      <label class="col">start_at (ISO)
+        <input id="availStart" placeholder="2025-09-05T18:00:00.000Z" />
+      </label>
+      <label class="col">end_at (ISO)
+        <input id="availEnd" placeholder="2025-09-05T19:00:00.000Z" />
+      </label>
+      <label class="col">timezone
+        <input id="availTz" value="Europe/Paris" />
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="availAdd()">Créer</button>
+    </div>
+    <div id="availOut" class="muted small"></div>
+  </fieldset>
+
+  <!-- 6) CATALOGUE PUBLIC -->
+  <fieldset>
+    <legend>6) Catalogue public</legend>
+    <div class="row">
+      <label class="col">type
+        <select id="pubType"><option value="">(tous)</option><option>INDIVIDUEL</option><option>GROUPE</option><option>REPLAY</option><option>LIVE</option></select>
+      </label>
+      <label class="col">langue
+        <input id="pubLang" placeholder="fr" />
+      </label>
+      <label class="col">prixMin (cts)
+        <input id="pubMin" type="number" />
+      </label>
+      <label class="col">prixMax (cts)
+        <input id="pubMax" type="number" />
+      </label>
+      <label class="col">tri
+        <select id="pubSort"><option value="">—</option><option value="price">Prix ↑</option><option value="price_desc">Prix ↓</option></select>
+      </label>
+      <button onclick="pubLoad()">Rechercher</button>
+    </div>
+    <div id="pubList" class="grid"></div>
+    <div id="pubCoachDetail" class="card" style="margin-top:10px;display:none;"></div>
+  </fieldset>
+
+  <!-- 7) BOOKING FLOW -->
+  <fieldset>
+    <legend>7) Booking</legend>
+    <div class="muted small">Choisis un coach et une offre depuis le catalogue public ou saisis manuellement ci-dessous.</div>
+    <div class="row">
+      <label class="col">coach_profile_id
+        <input id="bkCoachId" placeholder="UUID..." />
+      </label>
+      <label class="col">offer_id
+        <input id="bkOfferId" placeholder="UUID..." />
+      </label>
+    </div>
+    <div class="row">
+      <label class="col">start_at (ISO)
+        <input id="bkStart" placeholder="2025-09-05T18:00:00.000Z" />
+      </label>
+      <label class="col">end_at (ISO)
+        <input id="bkEnd" placeholder="2025-09-05T19:00:00.000Z" />
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="bkCreate()">Créer (Player)</button>
+      <button onclick="bkDelete()">Supprimer si PENDING (Player)</button>
+    </div>
+    <div class="row">
+      <label class="col">booking_id
+        <input id="bkId" />
+      </label>
+      <button onclick="bkPayTest()">Payer test (Player)</button>
+      <button onclick="bkRefreshPayment()">Refresh payment</button>
+      <button onclick="bkApprovePlayer()">Approuver (Player)</button>
+      <button onclick="bkApproveCoach()">Approuver (Coach)</button>
+      <button onclick="bkCancel()">Annuler (Player/Coach)</button>
+      <button onclick="bkDispute()">Dispute (Player/Admin)</button>
+      <button onclick="bkGet()">Get booking</button>
+    </div>
+    <div id="bkOut" class="muted small"></div>
+  </fieldset>
+
+  <!-- 8) MES BOOKINGS -->
+  <fieldset>
+    <legend>8) Mes bookings</legend>
+    <div class="row">
+      <button onclick="mine('player')">Lister (Player)</button>
+      <button onclick="ensureCoachProfile(); mine('coach')">Lister (Coach)</button>
+    </div>
+    <div id="mineList" class="list" style="margin-top:8px;"></div>
+  </fieldset>
+
+  <!-- 9) ADMIN -->
+  <fieldset>
+    <legend>9) Admin</legend>
+    <div class="actions">
+      <button onclick="runSweep()">POST /bookings/sweep</button>
+    </div>
+    <div id="adminOut" class="muted small"></div>
+  </fieldset>
+
+  <script>
+    // ---------- State ----------
+    const state = {
+      tokens: { player: null, coach: null, admin: null },
+      coachProfileId: null,
+      publicCoach: null,   // coach public sélectionné
+      publicOffer: null    // offer sélectionnée
+    };
+
+    const E = id => document.getElementById(id);
+    const trimTok = t => t ? (t.slice(0,22) + '…') : '∅';
+    const bases = () => ({
+      AUTH: E('authBase').value.trim(),
+      COACH: E('coachBase').value.trim(),
+      BOOK: E('bookBase').value.trim()
+    });
+
+    function showWho() {
+      E('whoami').innerHTML =
+        `Player: <code>${trimTok(state.tokens.player)}</code> |
+         Coach: <code>${trimTok(state.tokens.coach)}</code> |
+         Admin: <code>${trimTok(state.tokens.admin)}</code>
+         <span class="pill">coach_profile_id: ${state.coachProfileId || '∅'}</span>`;
+    }
+
+    // Restore tokens
+    (function boot() {
+      state.tokens.player = localStorage.getItem('tok_player') || null;
+      state.tokens.coach  = localStorage.getItem('tok_coach')  || null;
+      state.tokens.admin  = localStorage.getItem('tok_admin')  || null;
+      showWho();
+    })();
+
+    // ---------- Helpers ----------
+    async function fetchJson(url, opts={}) {
+      const r = await fetch(url, opts);
+      let j;
+      try { j = await r.json(); } catch { j = { error: 'Invalid JSON response' }; }
+      if (!r.ok) throw new Error(j.error || JSON.stringify(j));
+      return j;
+    }
+    const cents = n => (n/100).toFixed(2);
+    function toast(id, msg, klass='muted small') {
+      const el = E(id);
+      el.className = klass;
+      el.textContent = (typeof msg==='string') ? msg : JSON.stringify(msg);
+    }
+    const ok = (id, msg) => toast(id, msg, 'ok small');
+    const err = (id, msg) => toast(id, msg, 'err small');
+
+    function setCoachAndOffer(coach, offer) {
+      state.publicCoach = coach || null;
+      state.publicOffer = offer || null;
+      E('bkCoachId').value = coach?.id || '';
+      E('bkOfferId').value = offer?.id || '';
+    }
+
+    // ---------- Auth ----------
+    async function login(kind) {
+      const { AUTH } = bases();
+      const email = kind==='player' ? E('playerEmail').value : E('coachEmail').value;
+      const password = kind==='player' ? E('playerPass').value : E('coachPass').value;
+      try {
+        const j = await fetchJson(`${AUTH}/auth/login`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email, password })
+        });
+        state.tokens[kind] = j.token;
+        localStorage.setItem(`tok_${kind}`, j.token);
+        showWho();
+        if (kind === 'coach') await coachProfileLoad();
+      } catch (e) { alert(e.message); }
+    }
+    function saveAdmin() {
+      const t = E('adminToken').value.trim();
+      state.tokens.admin = t || null;
+      localStorage.setItem('tok_admin', t || '');
+      showWho();
+    }
+
+    // ---------- Coach Profile ----------
+    async function coachProfileLoad() {
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      try {
+        const p = await fetchJson(`${COACH}/coach/profile`, {
+          headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        state.coachProfileId = p?.id || null;
+        E('coachProfileId').value = p?.id || '';
+        E('pfStructure').value = p?.structure || '';
+        E('pfLangues').value = (p?.langues || []).join(',');
+        E('pfJeux').value = (p?.jeux || []).join(',');
+        E('pfBio').value = p?.bio_coach || '';
+        E('pfReseaux').value = JSON.stringify(p?.reseaux || {});
+        E('pfPalmares').value = JSON.stringify(p?.palmares || []);
+        showWho();
+        ok('coachProfileOut','Profil chargé');
+      } catch (e) {
+        state.coachProfileId = null;
+        showWho();
+        err('coachProfileOut', e.message);
+      }
+    }
+    async function coachProfileSave() {
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      const payload = {
+        structure: E('pfStructure').value.trim() || null,
+        bio_coach: E('pfBio').value.trim() || null,
+        langues: (E('pfLangues').value.trim() ? E('pfLangues').value.split(',').map(s=>s.trim()).filter(Boolean) : []),
+        jeux: (E('pfJeux').value.trim() ? E('pfJeux').value.split(',').map(s=>s.trim()).filter(Boolean) : []),
+      };
+      try {
+        payload.reseaux = JSON.parse(E('pfReseaux').value || '{}');
+        payload.palmares = JSON.parse(E('pfPalmares').value || '[]');
+      } catch { return alert('reseaux / palmares doivent être du JSON valide'); }
+      try {
+        const p = await fetchJson(`${COACH}/coach/profile`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+state.tokens.coach },
+          body: JSON.stringify(payload)
+        });
+        state.coachProfileId = p.id; E('coachProfileId').value = p.id; showWho();
+        ok('coachProfileOut','Profil sauvegardé');
+      } catch (e) { err('coachProfileOut', e.message); }
+    }
+
+    // ---------- Offers (privé) ----------
+    async function offersLoad() {
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      try {
+        const arr = await fetchJson(`${COACH}/coach/offers`, {
+          headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        renderOffers(arr);
+        ok('offerOut', `Trouvé ${arr.length} offre(s)`);
+      } catch (e) { err('offerOut', e.message); }
+    }
+    function renderOffers(arr) {
+      const wrap = E('offersList'); wrap.innerHTML='';
+      arr.forEach(o=>{
+        const d = document.createElement('div');
+        d.className='card';
+        d.innerHTML = `
+          <div><strong>${o.titre}</strong> <span class="pill">${o.type}</span>
+          <span class="pill">${o.actif?'actif':'inactif'}</span></div>
+          <div class="muted small">id: ${o.id}</div>
+          <div>${o.description||''}</div>
+          <div class="muted small">durée: ${o.duree_min}min — prix: ${cents(o.prix_centimes)} ${o.devise}</div>
+          <div class="actions">
+            <button>Éditer</button>
+            <button>Toggle actif</button>
+            <button>Supprimer</button>
+          </div>`;
+        const [bEdit,bToggle,bDel] = d.querySelectorAll('button');
+        bEdit.onclick = ()=>offerFill(o);
+        bToggle.onclick = ()=>offerPatch(o.id,{actif:!o.actif});
+        bDel.onclick = ()=>offerDelete(o.id);
+        wrap.appendChild(d);
+      });
+    }
+    function offerFill(o){
+      E('offerId').value=o.id;
+      E('offerType').value=o.type;
+      E('offerTitre').value=o.titre;
+      E('offerDuree').value=o.duree_min;
+      E('offerDesc').value=o.description||'';
+      E('offerPrix').value=o.prix_centimes;
+      E('offerDevise').value=o.devise||'EUR';
+      E('offerActif').value=String(o.actif);
+      ok('offerOut','Formulaire rempli depuis la carte.');
+    }
+    function offerReset(){
+      ['offerId','offerTitre','offerDesc'].forEach(id=>E(id).value='');
+      E('offerType').value='INDIVIDUEL';
+      E('offerDuree').value=60; E('offerPrix').value=2500; E('offerDevise').value='EUR'; E('offerActif').value='true';
+      ok('offerOut','Formulaire réinitialisé.');
+    }
+    async function offerSave(){
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      const id = E('offerId').value.trim();
+      const body = {
+        type: E('offerType').value,
+        titre: E('offerTitre').value.trim(),
+        description: E('offerDesc').value.trim(),
+        duree_min: parseInt(E('offerDuree').value||'60',10),
+        prix_centimes: parseInt(E('offerPrix').value||'0',10),
+        devise: E('offerDevise').value.trim()||'EUR',
+        actif: E('offerActif').value==='true'
+      };
+      try {
+        const j = await fetchJson(`${COACH}/coach/offers${id?`/${id}`:''}`, {
+          method: id?'PATCH':'POST',
+          headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+state.tokens.coach },
+          body: JSON.stringify(body)
+        });
+        ok('offerOut', id?'Offre mise à jour':'Offre créée');
+        offersLoad();
+      } catch (e) { err('offerOut', e.message); }
+    }
+    async function offerPatch(id, patch){
+      const { COACH } = bases();
+      try {
+        await fetchJson(`${COACH}/coach/offers/${id}`, {
+          method:'PATCH',
+          headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+state.tokens.coach },
+          body: JSON.stringify(patch)
+        });
+        offersLoad();
+      } catch (e) { alert(e.message); }
+    }
+    async function offerDelete(id){
+      const { COACH } = bases();
+      if (!confirm('Supprimer cette offre ?')) return;
+      try {
+        await fetchJson(`${COACH}/coach/offers/${id}`, {
+          method:'DELETE', headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        offersLoad();
+      } catch (e) { alert(e.message); }
+    }
+
+    // ---------- Availabilities (privé) ----------
+    async function availLoad(){
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      const from = E('availFrom').value.trim();
+      const to   = E('availTo').value.trim();
+      const qs = new URLSearchParams(); if(from) qs.set('from',from); if(to) qs.set('to',to);
+      try {
+        const arr = await fetchJson(`${COACH}/coach/availabilities?${qs.toString()}`, {
+          headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        const wrap = E('availList'); wrap.innerHTML='';
+        arr.forEach(a=>{
+          const d = document.createElement('div');
+          d.className='card';
+          const s = new Date(a.start_at), e=new Date(a.end_at);
+          const dur = Math.round((e-s)/60000);
+          d.innerHTML = `
+            <div><strong>${a.id}</strong></div>
+            <div class="muted small">${s.toISOString()} → ${e.toISOString()} (${dur}min)</div>
+            <div class="muted small">${a.timezone||''}</div>
+            <div class="actions"><button>Supprimer</button></div>`;
+          d.querySelector('button').onclick = ()=>availDelete(a.id);
+          wrap.appendChild(d);
+        });
+        ok('availOut', `Dispos: ${arr.length}`);
+      } catch (e) { err('availOut', e.message); }
+    }
+    async function availAdd(){
+      const { COACH } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      const body = {
+        start_at: E('availStart').value.trim(),
+        end_at:   E('availEnd').value.trim(),
+        timezone: E('availTz').value.trim() || 'Europe/Paris'
+      };
+      try {
+        await fetchJson(`${COACH}/coach/availabilities`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+state.tokens.coach },
+          body: JSON.stringify(body)
+        });
+        ok('availOut','Créneau créé');
+        availLoad();
+      } catch (e) { err('availOut', e.message); }
+    }
+    async function availDelete(id){
+      const { COACH } = bases();
+      if (!confirm('Supprimer ce créneau ?')) return;
+      try {
+        await fetchJson(`${COACH}/coach/availabilities/${id}`, {
+          method:'DELETE', headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        availLoad();
+      } catch (e) { alert(e.message); }
+    }
+
+    // ---------- Catalogue public ----------
+    async function pubLoad(){
+      const { COACH } = bases();
+      const qs = new URLSearchParams();
+      if (E('pubType').value) qs.set('type', E('pubType').value);
+      if (E('pubLang').value) qs.set('langue', E('pubLang').value);
+      if (E('pubMin').value) qs.set('prixMin', E('pubMin').value);
+      if (E('pubMax').value) qs.set('prixMax', E('pubMax').value);
+      if (E('pubSort').value) qs.set('sort', E('pubSort').value);
+      try {
+        const arr = await fetchJson(`${COACH}/coachs?${qs.toString()}`);
+        const wrap = E('pubList'); wrap.innerHTML='';
+        arr.forEach(p=>{
+          const min = p.offers?.length?Math.min(...p.offers.map(o=>o.prix_centimes)):'—';
+          const d = document.createElement('div');
+          d.className='card';
+          d.innerHTML = `
+            <div><strong>${p.structure||'Coach'}</strong> <span class="muted small">${p.langues?.join(', ')||''}</span></div>
+            <div class="muted small">id: ${p.id}</div>
+            <div>${p.bio_coach||''}</div>
+            <div class="muted small">Offres: ${p.offers?.length||0} — Min: ${min==='—'?'—':(cents(min)+' '+(p.offers?.[0]?.devise||'EUR'))}</div>
+            <div class="actions"><button>Voir détails</button></div>`;
+          d.querySelector('button').onclick = ()=>pubCoachDetail(p.id);
+          wrap.appendChild(d);
+        });
+      } catch (e) { alert(e.message); }
+    }
+    async function pubCoachDetail(id){
+      const { COACH } = bases();
+      try {
+        const p = await fetchJson(`${COACH}/coachs/${id}`);
+        state.publicCoach = p;
+        const box = E('pubCoachDetail'); box.style.display='';
+        let offers = (p.offers||[]).map(o=>`
+          <li>
+            <code>${o.id}</code> — <strong>${o.titre}</strong>
+            <span class="muted small">${o.duree_min}min — ${cents(o.prix_centimes)} ${o.devise}</span>
+            <div class="actions small"><button onclick='selectOffer("${o.id}")'>Sélectionner</button></div>
+          </li>`).join('');
+        if(!offers) offers = '<li class="muted small">Pas d’offre active</li>';
+        box.innerHTML = `
+          <div><strong>${p.structure||'Coach'}</strong> <span class="muted small">(${p.id})</span></div>
+          <div>${p.bio_coach||''}</div>
+          <div class="muted small">Langues: ${p.langues?.join(', ')||''}</div>
+          <div style="margin-top:6px"><em>Offers actives</em><ul>${offers}</ul></div>
+          <div class="actions"><button onclick='pubLoadAvail("${p.id}")'>Voir disponiblités (7 jours)</button></div>
+          <div id="pubAvailWrap" class="list" style="margin-top:8px;"></div>`;
+        // auto remplir booking coach_id
+        E('bkCoachId').value = p.id;
+      } catch (e) { alert(e.message); }
+    }
+    function selectOffer(offerId){
+      const o = (state.publicCoach?.offers||[]).find(x=>x.id===offerId);
+      if(!o) return alert('offer inconnue');
+      state.publicOffer = o;
+      E('bkOfferId').value = o.id;
+      ok('bkOut', `Offer sélectionnée: ${o.titre} (${o.duree_min}min, ${cents(o.prix_centimes)} ${o.devise})`);
+    }
+    async function pubLoadAvail(coachId){
+      const { COACH } = bases();
+      // 7 jours glissants
+      const now = new Date();
+      const from = new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),0,0,0)).toISOString().slice(0,10);
+      const to = new Date(Date.now()+7*24*3600e3).toISOString().slice(0,10);
+      const qs = new URLSearchParams({ from, to });
+      try {
+        const arr = await fetchJson(`${COACH}/coachs/${coachId}/availabilities?${qs.toString()}`);
+        const wrap = E('pubAvailWrap'); wrap.innerHTML='';
+        const expected = state.publicOffer?.duree_min || 60;
+        arr.forEach(a=>{
+          const s = new Date(a.start_at), e=new Date(a.end_at);
+          const dur = Math.round((e-s)/60000);
+          const div = document.createElement('div'); div.className='card';
+          div.innerHTML = `
+            <div><strong>${s.toISOString()}</strong> → ${e.toISOString()}
+              <span class="pill ${dur===expected?'ok':'warn'}">${dur}min</span></div>
+            <div class="actions"><button ${dur===expected?'':'disabled'}>Utiliser ce créneau</button></div>`;
+          div.querySelector('button').onclick = ()=>{
+            E('bkStart').value = s.toISOString();
+            E('bkEnd').value = e.toISOString();
+            window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
+          };
+          wrap.appendChild(div);
+        });
+      } catch (e) { alert(e.message); }
+    }
+
+    // ---------- Booking ----------
+    async function bkCreate(){
+      const { BOOK } = bases();
+      if (!state.tokens.player) return alert('Connecte le player');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings`,{
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+state.tokens.player },
+          body: JSON.stringify({
+            coach_profile_id: E('bkCoachId').value.trim(),
+            offer_id: E('bkOfferId').value.trim(),
+            start_at: E('bkStart').value.trim(),
+            end_at: E('bkEnd').value.trim()
+          })
+        });
+        E('bkId').value = j.booking.id;
+        ok('bkOut', `Créé: ${j.booking.id} — client_secret: ${j.stripe.client_secret.slice(0,28)}…`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkDelete(){
+      const { BOOK } = bases();
+      if (!state.tokens.player) return alert('Connecte le player');
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}`, {
+          method:'DELETE', headers:{ Authorization:'Bearer '+state.tokens.player }
+        });
+        ok('bkOut', j.message || 'Supprimé');
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkPayTest(){
+      const { BOOK } = bases();
+      if (!state.tokens.player) return alert('Connecte le player');
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}/pay-test`, {
+          method:'POST', headers:{ Authorization:'Bearer '+state.tokens.player }
+        });
+        ok('bkOut', `pay-test → PI=${j.status}, booking=${j.booking_status}`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkRefreshPayment(){
+      const { BOOK } = bases();
+      if (!state.tokens.player) return alert('Connecte le player');
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}/refresh-payment`, {
+          method:'POST', headers:{ Authorization:'Bearer '+state.tokens.player }
+        });
+        ok('bkOut', `refresh-payment → booking=${j.booking_status}, pi=${j.pi_status}`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkApprovePlayer(){
+      const { BOOK } = bases();
+      if (!state.tokens.player) return alert('Connecte le player');
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}/approve`, {
+          method:'PATCH', headers:{ Authorization:'Bearer '+state.tokens.player }
+        });
+        ok('bkOut', `approve(player) → status=${j.status}, coach_ok=${j.coach_approved}, player_ok=${j.player_approved}`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkApproveCoach(){
+      const { BOOK } = bases();
+      if (!state.tokens.coach) return alert('Connecte le coach');
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}/approve`, {
+          method:'PATCH', headers:{ Authorization:'Bearer '+state.tokens.coach }
+        });
+        ok('bkOut', `approve(coach) → status=${j.status}, coach_ok=${j.coach_approved}, player_ok=${j.player_approved}`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkCancel(){
+      const { BOOK } = bases();
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      // On tente d'abord player, sinon coach
+      let r, j;
+      try {
+        r = await fetch(`${BOOK}/bookings/${id}/cancel`, { method:'POST', headers:{ Authorization:'Bearer '+(state.tokens.player||'') }});
+        j = await r.json();
+        if (!r.ok && state.tokens.coach) {
+          r = await fetch(`${BOOK}/bookings/${id}/cancel`, { method:'POST', headers:{ Authorization:'Bearer '+state.tokens.coach }});
+          j = await r.json();
+        }
+        if (!r.ok) throw new Error(j.error || JSON.stringify(j));
+        ok('bkOut', `${j.message} — status=${j.booking?.status}`);
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkDispute(){
+      const { BOOK } = bases();
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      const token = state.tokens.player || state.tokens.admin;
+      if (!token) return alert('Player connecté ou Admin token requis');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}/dispute`, {
+          method:'POST', headers:{ Authorization:'Bearer '+token }
+        });
+        ok('bkOut', j.message || 'DISPUTED');
+      } catch (e) { err('bkOut', e.message); }
+    }
+    async function bkGet(){
+      const { BOOK } = bases();
+      const id = E('bkId').value.trim(); if(!id) return alert('booking_id ?');
+      const token = state.tokens.player || state.tokens.coach || state.tokens.admin;
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/${id}`, { headers:{ Authorization:'Bearer '+token }});
+        toast('bkOut', j);
+      } catch (e) { err('bkOut', e.message); }
+    }
+
+    // ---------- Mes bookings ----------
+    async function mine(as){
+      const { BOOK } = bases();
+      let url = `${BOOK}/bookings/me?as=${as}`;
+      const headers = {};
+      if (as==='player'){
+        if (!state.tokens.player) return alert('Connecte le player');
+        headers.Authorization = 'Bearer '+state.tokens.player;
+      } else {
+        if (!state.tokens.coach) return alert('Connecte le coach');
+        if (!state.coachProfileId) await coachProfileLoad();
+        url += `&coach_profile_id=${state.coachProfileId}`;
+        headers.Authorization = 'Bearer '+state.tokens.coach;
+      }
+      try {
+        const arr = await fetchJson(url, { headers });
+        const wrap = E('mineList'); wrap.innerHTML='';
+        arr.forEach(b=>{
+          const d = document.createElement('div');
+          d.className='card';
+          d.innerHTML = `
+            <div><strong>${b.id}</strong> <span class="pill">${b.status}</span></div>
+            <div class="muted small">${b.start_at} → ${b.end_at}</div>
+            <div class="actions small">
+              <button>Remplir</button>
+              <button>Get</button>
+            </div>`;
+          const [b1,b2] = d.querySelectorAll('button');
+          b1.onclick = ()=>{ E('bkId').value=b.id; E('bkCoachId').value=b.coach_profile_id; E('bkOfferId').value=b.offer_id; E('bkStart').value=b.start_at; E('bkEnd').value=b.end_at; window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); };
+          b2.onclick = ()=>{ E('bkId').value=b.id; bkGet(); };
+          wrap.appendChild(d);
+        });
+      } catch (e) { alert(e.message); }
+    }
+
+    // ---------- Admin ----------
+    async function runSweep(){
+      const { BOOK } = bases();
+      if (!state.tokens.admin) return alert('Colle un admin token');
+      try {
+        const j = await fetchJson(`${BOOK}/bookings/sweep`, {
+          method:'POST', headers:{ Authorization:'Bearer '+state.tokens.admin }
+        });
+        toast('adminOut', j);
+      } catch (e) { err('adminOut', e.message); }
+    }
+  </script>
+</body>
+</html>

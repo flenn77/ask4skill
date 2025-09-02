@@ -55,16 +55,20 @@ router.get('/:id', async (req, res) => {
 });
 
 router.get('/:id/availabilities', async (req, res) => {
+  const { Op } = require('sequelize');
   const { from, to } = req.query;
   const where = { coach_id: req.params.id };
+
   if (from || to) {
-    where.start_at = {}; where.end_at = {};
-    if (from) where.start_at[Op.gte] = new Date(from);
-    if (to) where.end_at[Op.lte] = new Date(to);
+    where[Op.and] = [];
+    if (from) where[Op.and].push({ end_at:   { [Op.gt]: new Date(from) } });
+    if (to)   where[Op.and].push({ start_at: { [Op.lt]: new Date(to)   } });
   }
+
   const a = await Availability.findAll({ where, order: [['start_at','ASC']] });
   res.json(a);
 });
+
 
 function minPrice(p) {
   if (!p.offers?.length) return Number.MAX_SAFE_INTEGER;
