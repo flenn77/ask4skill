@@ -1,8 +1,8 @@
-const express      = require('express');
-const bcrypt       = require('bcrypt');
-const crypto       = require('crypto');
-const validator    = require('validator');
-const nodemailer   = require('nodemailer');
+const express = require('express');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const validator = require('validator');
+const nodemailer = require('nodemailer');
 const { User, EmailConfirmation } = require('../../db/models');
 
 const router = express.Router();
@@ -164,8 +164,8 @@ router.post('/', async (req, res) => {
       minLength: 8,
       uppercase: /[A-Z]/,
       lowercase: /[a-z]/,
-      digit:     /\d/,
-      special:   /[!@#$%^&*(),.?":{}|<>]/
+      digit: /\d/,
+      special: /[!@#$%^&*(),.?":{}|<>]/
     };
     if (
       password.length < pwdRules.minLength ||
@@ -196,6 +196,7 @@ router.post('/', async (req, res) => {
         error: 'Téléphone invalide (format E.164, ex. +33123456789)'
       });
     }
+    
 
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
@@ -205,18 +206,19 @@ router.post('/', async (req, res) => {
       date_naissance, telephone
     });
 
-    const token   = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await EmailConfirmation.create({
-      user_id:    user.id,
+      user_id: user.id,
       token,
       expires_at: expires
     });
 
-    const confirmUrl = `${process.env.APP_URL || 'http://localhost:5000'}/auth/confirm?token=${token}`;
+    const confirmUrl = `${process.env.FRONT_URL || 'http://localhost:3000'}/confirm?token=${token}`;
+
     await transporter.sendMail({
-      from:    '"Ask4Skill" <no-reply@ask4skill.local>',
-      to:      user.email,
+      from: '"Ask4Skill" <no-reply@ask4skill.local>',
+      to: user.email,
       subject: 'Confirmez votre adresse e-mail',
       html: `
         <p>Bonjour ${prenom || pseudo},</p>

@@ -22,7 +22,7 @@ app.get('/', (req, res) => res.send('Service auth-service OK'));
 app.use('/auth', authRouter);
 
 // Synchronisation des modèles → création / mise à jour des tables
-db.sequelize.sync({ alter: true })
+db.sequelize.sync()
   .then(() => console.log('✅ Tables synchronisées'))
   .catch(err => console.error('❌ Échec sync:', err));
 
