@@ -47,7 +47,8 @@ router.post('/', async (req, res) => {
     const expires = new Date(Date.now() + 60*60*1000); // 1h
     await PasswordReset.create({ user_id: user.id, token, expires_at: expires });
 
-    const resetUrl = `${process.env.APP_URL||'http://localhost:5000'}/auth/reset?token=${token}`;
+    const resetUrl = `${process.env.FRONT_URL || 'http://localhost:3000'}/reset?token=${token}`;
+
     await transporter.sendMail({
       from: '"Ask4Skill" <no-reply@ask4skill.local>',
       to: user.email,
