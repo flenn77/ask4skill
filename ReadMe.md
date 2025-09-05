@@ -50,7 +50,7 @@ cd docker/
 ### 3) Migrations
 
 Migrations (tables + seed des refs : roles, sexes, levels, connexion_types)
-dans le contenaire auth-service lancer :
+dans le contenaire auth-service et dans le contenaire de coach-service (shell) lancer :
 
 ```bash
 npx sequelize-cli db:migrate
@@ -64,7 +64,7 @@ npx sequelize-cli db:migrate
 ```bash
 cd frontend
 npm i
-npm run dev   # Vite démarre le front (par défaut :5173)
+npm run dev   # Vite démarre le front
 ```
 Le front utilise React 19 + Vite + MUI. Configurez vos URLs API (ex: via variables ou un fichier `api.ts`) vers vos services `auth-service` et `coach-service`.
 
@@ -276,8 +276,4 @@ curl -s "$COACH/coachs/$COACH_ID" | jq .
 - **GET `/health`** (coach-service) : `status`, `uptime_sec`, `timestamp`
 - Pings racine : `GET /` sur chaque service
 - Healthcheck Docker (curl la racine)
-
-
-
-
 
