@@ -1,119 +1,43 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
-    },
-    role: {
-      type: DataTypes.ENUM('JOUEUR','COACH','ADMIN','SUPERADMIN','MODERATEUR'),
-      allowNull: false,
-      defaultValue: 'JOUEUR'
-    },
-    pseudo: {
-      type: DataTypes.STRING(50),
-      allowNull: true
-    },
-    email: {
-      type: DataTypes.STRING(150),
-      allowNull: false,
-      unique: true,
-      validate: { isEmail: true }
-    },
-    password: {
-      type: DataTypes.STRING(255),
-      allowNull: false
-    },
-    prenom: {
-      type: DataTypes.STRING(50),
-      allowNull: true
-    },
-    nom: {
-      type: DataTypes.STRING(50),
-      allowNull: true
-    },
-    bio: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    location: {
-      type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    preferences: {
-      type: DataTypes.JSON,
-      allowNull: false,
-      defaultValue: {}
-    },
-    notifications: {
-      type: DataTypes.JSON,
-      allowNull: false,
-      defaultValue: { email: true, push: false }
-    },
-    avatar_url: {
-      type: DataTypes.STRING(255),
-      allowNull: true
-    },
-    sexe: {
-      type: DataTypes.ENUM('H','F','Autre','Non spécifié'),
-      allowNull: true
-    },
-    date_naissance: {
-      type: DataTypes.DATEONLY,
-      allowNull: true
-    },
-    telephone: {
-      type: DataTypes.STRING(20),
-      allowNull: true
-    },
-    is_email_verified: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    },
-    google_id: {
-      type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    steam_id: {
-      type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    discord_id: {
-      type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    type_connexion: {
-      type: DataTypes.ENUM('email','google','steam','discord'),
-      allowNull: false,
-      defaultValue: 'email'
-    },
-    date_inscription: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
-    },
-    derniere_connexion: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    ip_creation: {
-      type: DataTypes.STRING(45),
-      allowNull: true
-    },
-    ip_derniere_connexion: {
-      type: DataTypes.STRING(45),
-      allowNull: true
-    },
-    token_invalid_before: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null
-    }
+    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+
+    // MCD
+    role_id: { type: DataTypes.SMALLINT, allowNull: false }, // FK → roles.id
+    pseudo: { type: DataTypes.STRING(32), allowNull: false, unique: true },
+    email: { type: DataTypes.STRING(150), allowNull: false, unique: true, validate: { isEmail: true } },
+    mot_de_passe: { type: DataTypes.CHAR(60), allowNull: false }, // hash bcrypt
+    prenom: { type: DataTypes.STRING(50), allowNull: true },
+    nom: { type: DataTypes.STRING(50), allowNull: true },
+    sexe_id: { type: DataTypes.TINYINT, allowNull: true }, // FK → sexes.id
+    date_naissance: { type: DataTypes.DATEONLY, allowNull: true },
+    telephone: { type: DataTypes.STRING(20), allowNull: true },
+    pays: { type: DataTypes.CHAR(2), allowNull: true },
+    ville: { type: DataTypes.STRING(100), allowNull: true },
+    langue_principale: { type: DataTypes.CHAR(5), allowNull: true },
+    niveau_id: { type: DataTypes.TINYINT, allowNull: true }, // FK → levels.id
+    description: { type: DataTypes.TEXT, allowNull: true },
+    date_inscription: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    derniere_connexion: { type: DataTypes.DATE, allowNull: true },
+    is_email_verified: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false }
   }, {
     tableName: 'users',
-    timestamps: false
+    timestamps: false,
+    indexes: [
+      { unique: true, fields: ['email'] },
+      { unique: true, fields: ['pseudo'] }
+    ]
   });
+
+  User.associate = (models) => {
+    User.belongsTo(models.Role, { foreignKey: 'role_id' });
+    User.belongsTo(models.Sex, { foreignKey: 'sexe_id' });
+    User.belongsTo(models.Level, { foreignKey: 'niveau_id' });
+    User.hasMany(models.UsersProvider, { foreignKey: 'user_id' });
+    User.hasMany(models.UserLanguage, { foreignKey: 'user_id' });
+    User.hasMany(models.Ban, { foreignKey: 'user_id', as: 'bans' });
+  };
+
   return User;
 };

@@ -14,6 +14,8 @@ import {
   InputAdornment,
   Divider,
   IconButton,
+  CircularProgress,
+  TextField,
 } from "@mui/material";
 import { Email, Lock, Visibility, VisibilityOff } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
@@ -24,8 +26,7 @@ import logo from "../../assets/logo.png";
 const fieldBg = "rgba(17,21,33,.55)";
 const textCol = "#E6E6F0";
 
-const NeonField = styled("div")(({ theme }) => ({
-  // wrapper → pour appliquer TextField-like facilement
+const NeonFieldWrapper = styled("div")(() => ({
   "& .MuiInputBase-root": {
     height: 44,
     background: fieldBg,
@@ -35,10 +36,7 @@ const NeonField = styled("div")(({ theme }) => ({
     fontSize: 14,
     transition: "all .2s ease",
   },
-  "& .MuiInputBase-input": {
-    padding: "12px 12px",
-  },
-  // ✅ neutralise le fond bleu/jaune lors de l’autofill (Chrome/Safari)
+  "& .MuiInputBase-input": { padding: "12px 12px" },
   "& input:-webkit-autofill": {
     WebkitBoxShadow: `0 0 0 1000px ${fieldBg} inset`,
     WebkitTextFillColor: textCol,
@@ -46,9 +44,7 @@ const NeonField = styled("div")(({ theme }) => ({
     borderRadius: 12,
     transition: "background-color 9999s ease-out 0s",
   },
-  "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(168,139,250,.22)",
-  },
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(168,139,250,.22)" },
   "&:hover .MuiOutlinedInput-notchedOutline": {
     borderColor: "rgba(168,139,250,.45)",
     boxShadow: "0 0 0 2px rgba(124,58,237,.18)",
@@ -68,11 +64,10 @@ const NeonField = styled("div")(({ theme }) => ({
   },
 }));
 
-import { TextField } from "@mui/material";
 const NeonTextField = (props) => (
-  <NeonField>
+  <NeonFieldWrapper>
     <TextField fullWidth size="small" {...props} />
-  </NeonField>
+  </NeonFieldWrapper>
 );
 
 const NeonButton = styled(Button)({
@@ -93,23 +88,41 @@ const NeonButton = styled(Button)({
   },
 });
 
+/* helpers */
+const isValidEmail = (v = "") => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const canSubmit = isValidEmail(email) && password.length > 0 && !submitting;
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!canSubmit) return;
     setError("");
+    setSubmitting(true);
     try {
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", {
+        email: email.trim(),
+        password,
+      });
       await login(res.data.token);
       navigate("/profile");
     } catch (err) {
-      setError(err.response?.data?.error || "Erreur de connexion");
+      const msg =
+        err.response?.data?.error ||
+        (err.response?.status === 403
+          ? "Veuillez confirmer votre adresse e-mail."
+          : "Erreur de connexion");
+      setError(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -185,6 +198,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               placeholder="ton@email.com"
+              autoFocus
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -213,6 +227,7 @@ export default function Login() {
                       onClick={() => setShowPwd((s) => !s)}
                       edge="end"
                       size="small"
+                      aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                     >
                       {showPwd ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -221,8 +236,17 @@ export default function Login() {
               }}
             />
 
-            <NeonButton type="submit" variant="contained">
-              Se connecter
+            <NeonButton
+              type="submit"
+              variant="contained"
+              disabled={!canSubmit}
+              startIcon={
+                submitting ? (
+                  <CircularProgress size={16} sx={{ color: "white" }} />
+                ) : null
+              }
+            >
+              {submitting ? "Connexion..." : "Se connecter"}
             </NeonButton>
 
             <Stack
@@ -249,37 +273,29 @@ export default function Login() {
                 variant="outlined"
                 fullWidth
                 size="small"
+                disabled
                 sx={{
                   borderRadius: 12,
                   color: textCol,
                   borderColor: "rgba(168,139,250,.35)",
                   bgcolor: "rgba(17,21,33,.45)",
-                  "&:hover": {
-                    borderColor: "#A78BFA",
-                    boxShadow:
-                      "0 0 0 2px rgba(124,58,237,.18), 0 6px 18px rgba(0,0,0,.35)",
-                  },
                 }}
               >
-                Google
+                Google (bientôt)
               </Button>
               <Button
                 variant="outlined"
                 fullWidth
                 size="small"
+                disabled
                 sx={{
                   borderRadius: 12,
                   color: textCol,
                   borderColor: "rgba(168,139,250,.35)",
                   bgcolor: "rgba(17,21,33,.45)",
-                  "&:hover": {
-                    borderColor: "#A78BFA",
-                    boxShadow:
-                      "0 0 0 2px rgba(124,58,237,.18), 0 6px 18px rgba(0,0,0,.35)",
-                  },
                 }}
               >
-                Discord
+                Discord (bientôt)
               </Button>
             </Stack>
           </Stack>

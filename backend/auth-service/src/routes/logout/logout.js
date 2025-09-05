@@ -1,37 +1,21 @@
+// src/routes/logout/logout.js
 const express = require('express');
-const { User } = require('../../db/models');
+const { TokenRevocation } = require('../../db/models');
 const { ensureAuth } = require('../../middleware/auth');
 
 const router = express.Router();
 
-/**
- * @swagger
- * /auth/logout:
- *   post:
- *     summary: Déconnecte l’utilisateur (révocation de tous les tokens)
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Déconnexion réussie
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Déconnecté avec succès
- *       401:
- *         description: Token manquant/invalide
- */
 router.post('/', ensureAuth, async (req, res) => {
-  await User.update(
-    { token_invalid_before: new Date() },
-    { where: { id: req.user.sub } }
-  );
-  res.json({ message: 'Déconnecté avec succès' });
+  try {
+    await TokenRevocation.upsert({
+      user_id: req.user.sub,
+      invalid_before: new Date()
+    });
+    return res.json({ message: 'Déconnecté avec succès' });
+  } catch (e) {
+    console.error('[logout]', e);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;

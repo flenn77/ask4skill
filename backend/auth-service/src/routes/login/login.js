@@ -1,65 +1,17 @@
+// src/routes/login/login.js
 const express   = require('express');
 const bcrypt    = require('bcrypt');
 const jwt       = require('jsonwebtoken');
 const validator = require('validator');
-const { User }  = require('../../db/models');
+const { User, Ban, LogConnexion }  = require('../../db/models');
 
 const router = express.Router();
 
-/**
- * @swagger
- * /auth/login:
- *   post:
- *     summary: Connexion d'un utilisateur
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Connexion réussie
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 token:
- *                   type: string
- *       400:
- *         description: Requête mal formée (champ manquant ou format invalide)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       401:
- *         description: Email ou mot de passe invalide
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
- *         description: Email non confirmé
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
 router.post('/', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validation entrée
     if (!email || !password) {
       return res.status(400).json({ error: 'Email et mot de passe sont requis' });
     }
@@ -67,30 +19,67 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Format d’email invalide' });
     }
 
+    // Recherche utilisateur
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe invalide' });
     }
 
-    const valid = await bcrypt.compare(password, user.password);
+    // Vérif mot de passe
+    const valid = await bcrypt.compare(password, user.mot_de_passe);
     if (!valid) {
       return res.status(401).json({ error: 'Email ou mot de passe invalide' });
     }
 
+    // Email non confirmé
     if (!user.is_email_verified) {
       return res.status(403).json({ error: 'Veuillez confirmer votre adresse e-mail' });
     }
 
-    const token = jwt.sign(
-      { sub: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '12h' }
-    );
+    // Vérif ban actif
+    const ban = await Ban.findOne({
+      where: { user_id: user.id, actif: true },
+      order: [['date_ban', 'DESC']]
+    });
+    if (ban) {
+      const now = new Date();
+      if (!ban.date_expiration || new Date(ban.date_expiration) > now) {
+        return res.status(403).json({
+          error: 'Compte banni',
+          raison: ban.raison,
+          expiration: ban.date_expiration
+        });
+      }
+    }
 
-    res.json({ token });
+    // ➕ Mise à jour connexion
+    const now = new Date();
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || null;
+    const userAgent = req.headers['user-agent'] || null;
+
+    await Promise.all([
+      user.update({ derniere_connexion: now }),
+      LogConnexion.create({ user_id: user.id, ip, user_agent: userAgent, date: now })
+    ]);
+
+    // JWT payload = id + rôle
+    const payload = { sub: user.id, role_id: user.role_id };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '12h' });
+
+    // Réponse
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        pseudo: user.pseudo,
+        email: user.email,
+        role_id: user.role_id,
+        is_email_verified: user.is_email_verified
+      }
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('[login] error:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

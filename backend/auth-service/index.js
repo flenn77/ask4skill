@@ -11,6 +11,7 @@ const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.set('trust proxy', true);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -22,9 +23,9 @@ app.get('/', (req, res) => res.send('Service auth-service OK'));
 app.use('/auth', authRouter);
 
 // Synchronisation des modèles → création / mise à jour des tables
-db.sequelize.sync()
-  .then(() => console.log('✅ Tables synchronisées'))
-  .catch(err => console.error('❌ Échec sync:', err));
+// db.sequelize.sync()
+//   .then(() => console.log('✅ Tables synchronisées'))
+//   .catch(err => console.error('❌ Échec sync:', err));
 
 app.listen(port, () => {
   console.log(`🚀 auth-service lancé sur le port ${port}`);

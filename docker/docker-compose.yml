@@ -67,11 +67,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    command: >
-      sh -c "
-        npx sequelize-cli db:migrate &&
-        npm run dev
-      "
+    command: npm run dev
 
   # 3) Autres services (sans migrations)
   user-service:
