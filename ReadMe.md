@@ -54,6 +54,7 @@ dans le contenaire auth-service et dans le contenaire de coach-service (shell) l
 
 ```bash
 npx sequelize-cli db:migrate
+npx sequelize-cli db:seed:all
 ```
 
 > Verifié dans phpmyadmin (nom de la base : ask4skill) supprimer toutes les tables avant de faire les migrations
@@ -269,7 +270,7 @@ curl -s "$COACH/coachs/$COACH_ID" | jq .
 **Coach-service**
 - `express`, `sequelize`, `mysql2`, `jsonwebtoken`, `joi` (schemas), `swagger-*`
 
----
+--- 
 
 ## ✅ Santé & monitoring
 

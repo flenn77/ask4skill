@@ -2,9 +2,21 @@
 import { useState, useContext, useMemo } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
-  AppBar, Toolbar, Container, Box, Stack, Button, IconButton,
-  Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-  Divider, Avatar, Tooltip
+  AppBar,
+  Toolbar,
+  Container,
+  Box,
+  Stack,
+  Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/MenuRounded";
@@ -23,21 +35,28 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  const links = useMemo(
-    () => [
-      { to: "/", label: "Coachs", icon: <SportsEsportsIcon /> },
-      ...(user
+  const links = useMemo(() => {
+    const base = [{ to: "/", label: "Coachs", icon: <SportsEsportsIcon /> }];
+    if (!user) return base;
+    const coach = [2, 3].includes(Number(user.role_id));
+    return [
+      ...base,
+      { to: "/bookings", label: "Réservations", icon: <CalendarMonthIcon /> },
+      { to: "/profile", label: "Profil", icon: <PersonIcon /> },
+      ...(coach
         ? [
-            { to: "/bookings", label: "Réservations", icon: <CalendarMonthIcon /> },
-            { to: "/profile", label: "Profil", icon: <PersonIcon /> },
+            {
+              to: "/coach/profile",
+              label: "Espace coach",
+              icon: <SportsEsportsIcon />,
+            },
           ]
         : []),
-    ],
-    [user]
-  );
-
-  const initial =
-    (user?.pseudo || user?.prenom || user?.email || "A").slice(0, 1).toUpperCase();
+    ];
+  }, [user]);
+  const initial = (user?.pseudo || user?.prenom || user?.email || "A")
+    .slice(0, 1)
+    .toUpperCase();
 
   return (
     <>
@@ -60,7 +79,7 @@ export default function Navbar() {
               py: 0,
             }}
           >
-            {/* LOGO + Nom */}
+            {/* LOGO Nom */}
             <Box
               component={RouterLink}
               to="/"
