@@ -90,7 +90,10 @@ router.patch('/', ensureAuth, ensureCoach, async (req, res) => {
       'titre', 'devise',
       'prix_par_heure', 'prix_replay', 'prix_session_groupe',
       'compte_stripe_id',
-      'disponible_actuellement', 'disponibilite_auto', 'est_certifie'
+      'disponible_actuellement', 'disponibilite_auto', 'est_certifie',
+      // nouveaux champs de config calendrier
+      'fuseau_horaire', 'duree_slot_min', 'delai_min_prise_rdv_min',
+      'delai_max_anticipation_jours', 'acceptation_mode', 'annulation_autorisee_heures'
     ];
     const data = {};
     for (const k of allowed) {
@@ -100,7 +103,7 @@ router.patch('/', ensureAuth, ensureCoach, async (req, res) => {
     if (data.devise && !/^[A-Z]{3}$/.test(String(data.devise))) {
       return res.status(400).json({ error: 'devise invalide (ISO 4217, ex: EUR)' });
     }
-    const numFields = ['prix_par_heure','prix_replay','prix_session_groupe'];
+    const numFields = ['prix_par_heure', 'prix_replay', 'prix_session_groupe'];
     for (const f of numFields) {
       if (data[f] != null && (Number.isNaN(Number(data[f])) || Number(data[f]) < 0)) {
         return res.status(400).json({ error: `${f} doit être un nombre >= 0` });

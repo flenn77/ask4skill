@@ -6,7 +6,7 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: { title: 'Coach Service API', version: '1.0.0' },
-    servers: [{ url: `http://localhost:${process.env.PORT || 5000}` }],
+    servers: [{ url: `http://localhost:${process.env.PORT || 5002}` }],
     components: {
       securitySchemes: {
         bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }
@@ -14,7 +14,7 @@ const options = {
     },
     security: [{ bearerAuth: [] }]
   },
-  apis: [ path.resolve(__dirname, 'routes/**/*.js') ]
+  apis: [ path.join(__dirname, 'routes/**/*.js') ] // <- join pour le glob
 };
 
 const swaggerSpec = swaggerJSDoc(options);

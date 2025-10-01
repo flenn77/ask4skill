@@ -3,15 +3,15 @@ import { createTheme } from '@mui/material/styles';
 
 const cosmos = {
   mode: 'dark',
-  primary:  { main: '#7C3AED' },     // violet néon
-  secondary:{ main: '#00E5FF' },     // cyan néon
+  primary:  { main: '#7C3AED' },
+  secondary:{ main: '#00E5FF' },
   info:     { main: '#22D3EE' },
   success:  { main: '#22C55E' },
   warning:  { main: '#F59E0B' },
   error:    { main: '#F43F5E' },
   background: {
-    default: '#05060F',              // nuit profonde
-    paper:   'rgba(14, 20, 35, 0.6)' // verre dépoli
+    default: '#05060F',
+    paper:   'rgba(14, 20, 35, 0.6)'
   },
   text: {
     primary:  '#E2E8F0',
@@ -35,7 +35,6 @@ const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        // Fond cosmos: mesh + étoiles + bruit léger
         body: {
           minHeight: '100vh',
           background:
@@ -55,12 +54,14 @@ const theme = createTheme({
           opacity: .2,
           pointerEvents: 'none',
         },
+        // Remplacement du data URI tronqué par un motif CSS discret (pas de fetch)
         'body::after': {
           content: '""',
           position: 'fixed',
           inset: 0,
-          background: 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB...")',
-          opacity: .03,
+          background:
+            'repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px)',
+          opacity: .06,
           pointerEvents: 'none',
         },
       },
@@ -98,51 +99,15 @@ const theme = createTheme({
       },
     },
     MuiButton: {
-      defaultProps: { disableElevation: true, size: 'large' },
+      defaultProps: { size: 'large', disableElevation: true },
       styleOverrides: {
-        root: {
-          borderRadius: 14,
-          paddingInline: 18,
-          transition: 'transform .15s ease, box-shadow .25s ease, filter .25s ease',
-          willChange: 'transform, box-shadow',
-          '&:hover': { transform: 'translateY(-1px)' },
-        },
+        root: { borderRadius: 16, paddingInline: 18 },
         containedPrimary: {
-          background: 'linear-gradient(135deg, #00E5FF 0%, #7C3AED 100%)',
-          boxShadow:
-            '0 0 0 2px rgba(124,58,237,.25) inset, 0 16px 40px rgba(124,58,237,.25)',
-          '&:hover': {
-            filter: 'brightness(1.05)',
-            boxShadow:
-              '0 0 0 2px rgba(124,58,237,.35) inset, 0 22px 60px rgba(124,58,237,.35)',
-          },
-        },
-        outlined: {
-          borderColor: 'rgba(148,163,184,.35)',
-          background: 'rgba(14,20,35,.35)',
-          '&:hover': {
-            borderColor: cosmos.secondary.main,
-            boxShadow: '0 10px 30px rgba(0,229,255,.15)',
-          },
+          background: 'linear-gradient(135deg, #0EA5E9, #7C3AED)',
         },
       },
     },
-    MuiDivider: {
-      styleOverrides: {
-        root: {
-          borderColor: 'rgba(148,163,184,.18)',
-        },
-      },
-    },
-    MuiLink: {
-      styleOverrides: {
-        root: {
-          fontWeight: 700,
-          textDecorationColor: 'rgba(0,229,255,.35)',
-          '&:hover': { textDecorationColor: cosmos.secondary.main },
-        },
-      },
-    },
+    MuiLink: { styleOverrides: { root: { fontWeight: 600 } } },
   },
 });
 

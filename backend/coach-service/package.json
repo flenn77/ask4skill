@@ -2,9 +2,14 @@
   "name": "coach-service",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "migrate": "sequelize db:migrate",
+    "seed": "sequelize db:seed:all",
+    "migrate:undo": "sequelize db:migrate:undo:all",
+    "seed:undo": "sequelize db:seed:undo:all"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +18,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
-    "joi": "^18.0.1",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.3",
     "sequelize": "^6.37.7",

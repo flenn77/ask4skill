@@ -5,8 +5,8 @@ const {
   CoachProfile,
   CoachGame,
   CoachSpecialite,
-  CoachPalmares,
-  Indisponibilite
+  CoachPalmares
+  // ⚠️ retiré: Indisponibilite
 } = require('../../db/models');
 
 const router = express.Router();
@@ -27,15 +27,6 @@ const PRICE_FIELDS = {
   groupe: 'prix_session_groupe'
 };
 
-/**
- * GET /coachs
- * Query:
- *  - game: string (ex: Valorant)
- *  - specialty: string (ex: individuel)
- *  - priceField: heure|replay|groupe (default: heure)
- *  - priceMin, priceMax: number
- *  - sort: price_asc|price_desc|date_desc|date_asc (default: date_desc)
- */
 router.get('/', async (req, res) => {
   try {
     const {
@@ -47,7 +38,6 @@ router.get('/', async (req, res) => {
       sort = 'date_desc'
     } = req.query;
 
-    // Filtrage par IDs via tables enfants pour éviter de dépendre des alias d'associations
     let allowedCoachIds = null;
 
     if (game) {
@@ -68,14 +58,9 @@ router.get('/', async (req, res) => {
       allowedCoachIds = allowedCoachIds === null ? ids : new Set([...allowedCoachIds].filter(x => ids.has(x)));
     }
 
-    // Where sur CoachProfile
     const where = {};
-    if (allowedCoachIds && allowedCoachIds.size === 0) {
-      return res.json([]); // aucun coach ne matche
-    }
-    if (allowedCoachIds && allowedCoachIds.size > 0) {
-      where.id = { [Op.in]: [...allowedCoachIds] };
-    }
+    if (allowedCoachIds && allowedCoachIds.size === 0) return res.json([]);
+    if (allowedCoachIds && allowedCoachIds.size > 0) where.id = { [Op.in]: [...allowedCoachIds] };
 
     const pf = PRICE_FIELDS[priceField] || PRICE_FIELDS.heure;
     if (priceMin || priceMax) {
@@ -84,7 +69,6 @@ router.get('/', async (req, res) => {
       if (priceMax != null) where[pf][Op.lte] = Number(priceMax);
     }
 
-    // Tri
     let order = [['date_creation', 'DESC']];
     if (sort === 'price_asc') order = [[pf, 'ASC']];
     else if (sort === 'price_desc') order = [[pf, 'DESC']];
@@ -92,7 +76,6 @@ router.get('/', async (req, res) => {
 
     const profiles = await CoachProfile.findAll({ where, order });
 
-    // Enrichissement bulk (games / specialites)
     const coachIds = profiles.map(p => p.id);
     const [games, specs] = await Promise.all([
       CoachGame.findAll({ where: { coach_id: { [Op.in]: coachIds } } }),
@@ -126,7 +109,6 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /coachs/:id
- * Détail public d’un coach (profil + games + spécialités + palmarès)
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -152,55 +134,6 @@ router.get('/:id', async (req, res) => {
     return res.json(j);
   } catch (e) {
     console.error('[GET /coachs/:id]', e);
-    return res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
-/**
- * GET /coachs/:id/indisponibilites
- * Query: ?from=YYYY-MM-DD&to=YYYY-MM-DD&actif=true|false
- */
-router.get('/:id/indisponibilites', async (req, res) => {
-  try {
-    const coach = await CoachProfile.findByPk(req.params.id);
-    if (!coach) return res.status(404).json({ error: 'Coach introuvable' });
-
-    const { from, to, actif } = req.query;
-    const where = { coach_id: coach.id };
-
-    if (actif === 'true') where.actif = true;
-    else if (actif === 'false') where.actif = false;
-
-    if (from || to) {
-      where[Op.or] = [
-        { type: 'repetitif' },
-        {
-          type: 'unique',
-          ...(from || to
-            ? {
-                date_unique: {
-                  ...(from ? { [Op.gte]: from } : {}),
-                  ...(to ? { [Op.lte]: to } : {})
-                }
-              }
-            : {})
-        }
-      ];
-    }
-
-    const items = await Indisponibilite.findAll({
-      where,
-      order: [
-        ['type', 'ASC'],
-        ['date_unique', 'ASC'],
-        ['jour', 'ASC'],
-        ['heure_debut', 'ASC']
-      ]
-    });
-
-    return res.json(items);
-  } catch (e) {
-    console.error('[GET /coachs/:id/indisponibilites]', e);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 });

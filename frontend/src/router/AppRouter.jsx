@@ -1,78 +1,113 @@
 // src/router/AppRouter.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import Navbar from "../components/Navbar";
-import Profile from "../pages/Profile";
-import Coaches from "../pages/Coaches";
-import CoachDetail from "../pages/CoachDetail";
-import Bookings from "../pages/Bookings";
 import { AuthProvider } from "../context/AuthContext";
 import ProtectedRoute from "../components/ProtectedRoute";
-import ProtectedCoachRoute from "../components/ProtectedCoachRoute";
-import CoachShell from "../layouts/CoachShell";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
-// auth pages
-import Login from "../pages/auth/Login";
-import Register from "../pages/auth/Register";
-import ForgotPassword from "../pages/auth/ForgotPassword";
-import ResetPassword from "../pages/auth/ResetPassword";
-import ConfirmEmail from "../pages/auth/ConfirmEmail";
+// --- Lazy pages (code splitting)
+const Profile = lazy(() => import("../pages/Profile"));
 
-// coach private pages
-import CoachProfileManage from "../pages/coach/ProfileManage";
-import CoachGamesManage from "../pages/coach/GamesManage";
-import CoachSpecialitesManage from "../pages/coach/SpecialitesManage";
-import CoachPalmaresManage from "../pages/coach/PalmaresManage";
-import CoachIndisposManage from "../pages/coach/IndisposManage";
+// Auth
+const Login = lazy(() => import("../pages/auth/Login"));
+const Register = lazy(() => import("../pages/auth/Register"));
+const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("../pages/auth/ResetPassword"));
+const ConfirmEmail = lazy(() => import("../pages/auth/ConfirmEmail"));
+
+// Coach space
+const CoachLayout = lazy(() => import("../components/CoachLayout"));
+const CoachOffers = lazy(() => import("../pages/coach/Offers"));
+const CoachDemandes = lazy(() => import("../pages/coach/Demandes"));
+const CoachGamesSpecialties = lazy(() => import("../pages/coach/GamesSpecialties"));
+const CoachPalmares = lazy(() => import("../pages/coach/Palmares"));
+
+// Public / joueur
+const CoachesList = lazy(() => import("../pages/explore/CoachesList"));
+const CoachDetails = lazy(() => import("../pages/explore/CoachDetails"));
+const PlayerDemandes = lazy(() => import("../pages/player/Demandes"));
+
+// --- Fallback néon
+function NeonFallback() {
+  return (
+    <Box sx={{
+      display: "grid", placeItems: "center", minHeight: "45vh",
+      textAlign: "center"
+    }}>
+      <Box sx={{
+        width: 72, height: 72, borderRadius: "50%",
+        display: "grid", placeItems: "center",
+        background: "radial-gradient(60% 60% at 50% 50%, rgba(124,58,237,.25) 0%, rgba(34,211,238,.12) 100%)",
+        boxShadow: "0 0 24px rgba(124,58,237,.35), inset 0 0 24px rgba(34,211,238,.18)",
+        mb: 1.5
+      }}>
+        <CircularProgress size={28} sx={{ color: "#A78BFA" }} />
+      </Box>
+      <Typography sx={{ opacity: .9 }}>Chargement…</Typography>
+    </Box>
+  );
+}
 
 export default function AppRouter() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Navbar />
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Coaches />} />
-          <Route path="/coachs/:id" element={<CoachDetail />} />
+        <Suspense fallback={<NeonFallback />}>
+          <Routes>
+            {/* Accueil -> explore */}
+            <Route path="/" element={<Navigate to="/explore" replace />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot" element={<ForgotPassword />} />
-          <Route path="/reset" element={<ResetPassword />} />
-          <Route path="/confirm" element={<ConfirmEmail />} />
+            {/* Public */}
+            <Route path="/explore" element={<CoachesList />} />
+            <Route path="/coachs/:id" element={<CoachDetails />} />
 
-          {/* User */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute><Profile /></ProtectedRoute>
-            }
-          />
-          <Route
-            path="/bookings"
-            element={
-              <ProtectedRoute><Bookings /></ProtectedRoute>
-            }
-          />
+            {/* Auth */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot" element={<ForgotPassword />} />
+            <Route path="/reset" element={<ResetPassword />} />
+            <Route path="/confirm" element={<ConfirmEmail />} />
 
-          {/* Coach space */}
-          <Route
-            path="/coach"
-            element={
-              <ProtectedCoachRoute><CoachShell /></ProtectedCoachRoute>
-            }
-          >
-            <Route index element={<Navigate to="profile" replace />} />
-            <Route path="profile" element={<CoachProfileManage />} />
-            <Route path="games" element={<CoachGamesManage />} />
-            <Route path="specialites" element={<CoachSpecialitesManage />} />
-            <Route path="palmares" element={<CoachPalmaresManage />} />
-            <Route path="indispos" element={<CoachIndisposManage />} />
-          </Route>
+            {/* User (email vérifié conseillé) */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute requireVerified>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/demandes"
+              element={
+                <ProtectedRoute requireVerified>
+                  <PlayerDemandes />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Coach (restreint au rôle COACH) */}
+            <Route
+              path="/coach"
+              element={
+                <ProtectedRoute roles={["COACH"]} requireVerified>
+                  <CoachLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="offers" replace />} />
+              <Route path="offers" element={<CoachOffers />} />
+              <Route path="demandes" element={<CoachDemandes />} />
+              <Route path="games" element={<CoachGamesSpecialties />} />
+              <Route path="palmares" element={<CoachPalmares />} />
+            </Route>
+
+            {/* 404 → explore */}
+            <Route path="*" element={<Navigate to="/explore" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

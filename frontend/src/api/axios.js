@@ -1,11 +1,11 @@
-// src/services/api.js
+// src/api/axios.js
 import axios from "axios";
 
 const DEFAULT_BASE = import.meta.env.VITE_API_BASE || ""; // optionnel (gateway)
 const BASES = {
   auth:  import.meta.env.VITE_AUTH_API_BASE  || "http://localhost:5000",
-  coach: import.meta.env.VITE_COACH_API_BASE || "http://localhost:5002",
-  // ajoute d’autres services ici si besoin (payments, media, etc.)
+  coach: import.meta.env.VITE_COACH_API_BASE || import.meta.env.VITE_COACH_API_URL || "http://localhost:5002",
+  // ajoute d’autres services ici si besoin
 };
 
 function resolveBase(url = "") {

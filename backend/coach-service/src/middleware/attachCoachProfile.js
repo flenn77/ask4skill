@@ -1,5 +1,5 @@
 'use strict';
-const { CoachProfile } = require('../db/models');
+const { CoachProfile } = require('../db/models'); // <- corrige l’ancien chemin ../db/models
 
 /**
  * Charge (si existe) le profil coach de l’utilisateur courant

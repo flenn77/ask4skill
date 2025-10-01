@@ -1,17 +1,17 @@
 // src/layouts/AuthLayout.jsx
 import { Box, Container } from "@mui/material";
 
-export default function AuthLayout({ children, compact = false }) {
+function AuthLayout({ children, compact = false }) {
   return (
     <Box
       sx={{
-        // On réserve toute la hauteur visible, moins ~64px de navbar
+        // réserve toute la hauteur visible (moins ~64px de navbar)
         minHeight: "calc(100dvh - 64px)",
         display: "grid",
         placeItems: "center",
         px: 2,
         py: compact ? 2 : 4,
-        // même fond néon que le reste
+        // fond néon cohérent
         background:
           "radial-gradient(900px 600px at 85% 20%, rgba(124,58,237,.25), transparent 50%), linear-gradient(120deg,#030711 0%,#0B1020 60%,#090a14 100%)",
       }}
@@ -22,3 +22,6 @@ export default function AuthLayout({ children, compact = false }) {
     </Box>
   );
 }
+
+export default AuthLayout;
+export { AuthLayout };
